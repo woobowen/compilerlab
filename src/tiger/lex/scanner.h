@@ -55,27 +55,39 @@ private:
    * NOTE: do not change all the funtion signature below, which is used by
    * flexc++ internally
    */
-  int lex__();
-  int executeAction__(size_t ruleNr);
+  int lex_();
+  int executeAction_(size_t ruleNr);
 
   void print();
   void preCode();
-  void postCode(PostEnum__ type);
+  void postCode(PostEnum_ type);
   void adjust();
   void adjustStr();
 };
 
-inline int Scanner::lex() { return lex__(); }
+inline int Scanner::lex() { return lex_(); }
 
 inline void Scanner::preCode() {
   // Optionally replace by your own code
 }
 
-inline void Scanner::postCode(PostEnum__ type) {
+inline void Scanner::postCode(PostEnum_ type) {
   // Optionally replace by your own code
+  // 第4部分：错误处理
+  // 仅当遇到文件结束（EOF）时，才需要检查
+  if (type == PostEnum_::END){
+    // 注释未关闭
+    if (startCondition() == StartCondition_::COMMENT) {
+      errormsg_->Error(errormsg_->tok_pos_, "unexpected end of file in comment");
+    } 
+    // 字符串未关闭
+    if (startCondition() == StartCondition_::STR) {
+      errormsg_->Error(errormsg_->tok_pos_, "unexpected end of file in string");
+    }
+  }
 }
 
-inline void Scanner::print() { print__(); }
+inline void Scanner::print() { print_(); }
 
 inline void Scanner::adjust() {
   errormsg_->tok_pos_ = char_pos_;
