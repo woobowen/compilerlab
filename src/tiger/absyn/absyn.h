@@ -5,9 +5,7 @@
 #include <list>
 #include <string>
 
-#include "tiger/env/env.h"
 #include "tiger/errormsg/errormsg.h"
-#include "tiger/semant/types.h"
 #include "tiger/symbol/symbol.h"
 
 /**
@@ -63,8 +61,6 @@ public:
   ~AbsynTree();
 
   void Print(FILE *out) const;
-  void SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
-                  err::ErrorMsg *errormsg) const;
 private:
   absyn::Exp *root_;
 };
@@ -78,10 +74,6 @@ public:
   int pos_;
   virtual ~Var() = default;
   virtual void Print(FILE *out, int d) const = 0;
-  virtual type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
-                               int labelcount,
-                               err::ErrorMsg *errormsg) const = 0;
-
 protected:
   explicit Var(int pos) : pos_(pos) {}
 };
@@ -93,8 +85,6 @@ public:
   ~SimpleVar() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 class FieldVar : public Var {
@@ -107,8 +97,6 @@ public:
   ~FieldVar() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 class SubscriptVar : public Var {
@@ -121,8 +109,6 @@ public:
   ~SubscriptVar() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 /**
@@ -134,10 +120,6 @@ public:
   int pos_;
   virtual ~Exp() = default;
   virtual void Print(FILE *out, int d) const = 0;
-  virtual type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
-                               int labelcount,
-                               err::ErrorMsg *errormsg) const = 0;
-
 protected:
   explicit Exp(int pos) : pos_(pos) {}
 };
@@ -150,8 +132,6 @@ public:
   ~VarExp() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 class NilExp : public Exp {
@@ -160,8 +140,6 @@ public:
   ~NilExp() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 class IntExp : public Exp {
@@ -172,8 +150,6 @@ public:
   ~IntExp() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 class StringExp : public Exp {
@@ -184,8 +160,6 @@ public:
   ~StringExp() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 class CallExp : public Exp {
@@ -200,8 +174,6 @@ public:
   ~CallExp() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 class OpExp : public Exp {
@@ -214,8 +186,6 @@ public:
   ~OpExp() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 class RecordExp : public Exp {
@@ -228,8 +198,6 @@ public:
   ~RecordExp() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 class SeqExp : public Exp {
@@ -240,8 +208,6 @@ public:
   ~SeqExp() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 class AssignExp : public Exp {
@@ -253,8 +219,6 @@ public:
   ~AssignExp() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 class IfExp : public Exp {
@@ -266,8 +230,6 @@ public:
   ~IfExp() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 class WhileExp : public Exp {
@@ -279,8 +241,6 @@ public:
   ~WhileExp() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 class ForExp : public Exp {
@@ -294,8 +254,6 @@ public:
   ~ForExp() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 class BreakExp : public Exp {
@@ -304,8 +262,6 @@ public:
   ~BreakExp() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 class LetExp : public Exp {
@@ -318,8 +274,6 @@ public:
   ~LetExp() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 class ArrayExp : public Exp {
@@ -332,8 +286,6 @@ public:
   ~ArrayExp() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 class VoidExp : public Exp {
@@ -342,8 +294,6 @@ public:
   ~VoidExp() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 /**
@@ -355,9 +305,6 @@ public:
   int pos_;
   virtual ~Dec() = default;
   virtual void Print(FILE *out, int d) const = 0;
-  virtual void SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                          err::ErrorMsg *errormsg) const = 0;
-
 protected:
   explicit Dec(int pos) : pos_(pos) {}
 };
@@ -371,8 +318,6 @@ public:
   ~FunctionDec() override;
 
   void Print(FILE *out, int d) const override;
-  void SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                  err::ErrorMsg *errormsg) const override;
 };
 
 class VarDec : public Dec {
@@ -387,8 +332,6 @@ public:
   ~VarDec() override;
 
   void Print(FILE *out, int d) const override;
-  void SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                  err::ErrorMsg *errormsg) const override;
 };
 
 class TypeDec : public Dec {
@@ -399,8 +342,6 @@ public:
   ~TypeDec() override;
 
   void Print(FILE *out, int d) const override;
-  void SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
-                  err::ErrorMsg *errormsg) const override;
 };
 
 /**
@@ -412,9 +353,6 @@ public:
   int pos_;
   virtual ~Ty() = default;
   virtual void Print(FILE *out, int d) const = 0;
-  virtual type::Ty *SemAnalyze(env::TEnvPtr tenv,
-                               err::ErrorMsg *errormsg) const = 0;
-
 protected:
   explicit Ty(int pos) : pos_(pos) {}
 };
@@ -427,8 +365,6 @@ public:
   ~NameTy() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::TEnvPtr tenv,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 class RecordTy : public Ty {
@@ -439,8 +375,6 @@ public:
   ~RecordTy() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::TEnvPtr tenv,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 class ArrayTy : public Ty {
@@ -451,8 +385,6 @@ public:
   ~ArrayTy() override;
 
   void Print(FILE *out, int d) const override;
-  type::Ty *SemAnalyze(env::TEnvPtr tenv,
-                       err::ErrorMsg *errormsg) const override;
 };
 
 /**
@@ -484,10 +416,6 @@ public:
     return field_list_;
   }
   void Print(FILE *out, int d) const;
-  type::TyList *MakeFormalTyList(env::TEnvPtr tenv,
-                                 err::ErrorMsg *errormsg) const;
-  type::FieldList *MakeFieldList(env::TEnvPtr tenv,
-                                 err::ErrorMsg *errormsg) const;
 
 private:
   std::list<Field *> field_list_;
