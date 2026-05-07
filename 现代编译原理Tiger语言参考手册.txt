@@ -1,0 +1,279 @@
+附录 Ti ger 语⾔参考⼿册
+Ti ger 语⾔是—个⼩规模的语⾔，它有嵌套函数、采⽤隐含指针的记录值、数组、整型和字
+符串变量，以及⼏种简单的结构化的控制结构。
+A. 1 词法名词
+标识符∶ 标识符是以字⺟开头，由字⺟、数字和下划线组成的序列（区分⼤⼩写字⺟）。在
+本附录中，符号 i d 代表⼀个标识符。
+注释; 注释可以出现在任意两个单词之间。注释以/★开始，以★/结束，并且可以嵌套。
+A. 2 声明
+声明序列是由⼀系列的类型、值和函数声明组成的序列; 各个声明之间没有⽤来分隔或终
+⽌⼀个声明的标点符号。
+dcs→ l de]
+dec→rydec→ vandec
+→j undee
+51 8本节所⽤的语法记号中，e代表空字符串，xl 代表可能为空的序列 x。
+数据类型
+Ti ger中类型和类型声明的语法是
+rydec → type type-i d = ry
+b →+ bype-d‘ ⼀字⼀ （这⾥的花括号代表花括号⾃身）
+→+ arry of ype-i d
+yhel ds →e→ i d: type-i d | . ,  d: type-i d
+· 内建类型∶ 有两个预先定义的命名类型 i nt 和 stri ng。可以通过类型声明定义或重新定
+义（包括那些预定义的）其他的命名类型。
+· 记录; 记录类型是由花括号中列出的它们的各个域来定义的，每⼀个域⽤fi el dnam e∶
+type-i d 来描述，其中 type-i d 是⼀个由类型声明定义的标识符。
+· 数组∶ 任何命名类型构成的数组可以通过 array of type-i d来创建。数组的⻓度不作为这
+个类型的⼀部分被指定; 这个类型的每⼀个数组都可有不同的⻓度，并且⻓度是在程序
+361附录 Ti ger语⾔参考⼿册
+运⾏中创建数组时确定的。
+· 记录各不相同∶ 每⼀个记录或数组类型的声明创建⼀个新的类型，并且这个新类型与其
+他记录或数组类型不兼容（即使所有的域都相同）。
+· 相互递归的类型; ⼀组类型可以递归或相互递归。相互递归的类型是通过⼀系列连续的、
+其间没有介⼊值或函数声明的类型声明来指明的。每⼀个递归环必须经过⼀个记录或数
+组类型。
+因此，整数表的类型是∶
+typ e  in tlist =  {h d : in t,tl:in tlist)
+typ e  tre e = (k e y: in t,c h ild re n : tre e list}
+typ e  tre e list = (h d : tre e ,tl: tre e list}
+但是，下⾯的声明序列是⾮法的∶
+typ e  b =  ctyp e  c =  b
+· 域名的可重⽤性∶ 不同的记录类型可以使⽤相同的域名（如上例中 i ntl i st 和 treel i st
+的域 hd）。 51 9
+A. 2. 1 变量
+vardec → var d : = exp→var i d:  type-i d: = exp
+在上⾯的变量声明中，短形式的声明给出了变量名，其后跟随⼀个表示该变量初值的表达
+式。在这种形式中，变量的类型取决于这个表达式的类型。
+在⻓形式的变量声明中，同时还给出了变量的类型。初值表达式必须具有相同的类型。
+如果初值表达式是 ni l ，则必须使⽤⻓形式的声明。
+每⼀个变量声明创建⼀个新的变量，它的⽣命期同其声明的作⽤域⼀样⻓。
+A. 2. 2 函数
+fundec →functi on i d ( tyfi el ds) = ep
+→functi on i d( tyfel ds) : type-i d= exp
+上⾯的第⼀⾏是⼀个过程声明; 第⼆⾏是⼀个函数声明。过程没有返回值; 但函数返回结
+果值，并且结果值的类型在冒号之后指明。exp是过程体或函数体，tyfi el ds指明了参数的类型
+和名字。所有参数都是传值参数。
+函数可以递归。相互递归的函数和过程通过⼀系列连续的函数声明来指明（之间没有插⼊
+类型或变量声明）∶
+fu n c tio n  tre e L e a ve a (t:tre e ):in t =
+if t= n il th e n  1el se t r eel 1at Leaveg( t . chd1dr en)
+fu n c tlo n  tre e listL e a ve s(L :tre e list);in t=
+if L = n ll th e n  0
+el se t r eeLeaveg( L. hd) + t r eel i st Leaves( L. t l )
+362 附录 Ti ger 语⾔参考⼿册
+A. 2. 3 作⽤域规则
+· 局部变量∶ 在表达式 l et ⋯ vardec ⋯ i n exp end中声明的变量的作⽤域从 vardec 之后开
+始直到 end结束。
+· 参数∶ 在 functi on i d（⋯ i d∶ i d. ⋯）=exp中，参数 i d，的作⽤域是整个函数体 exp。[5 2 0
+· 嵌套作⽤域∶ 变量或参数的作⽤域也包括那个作⽤域中每⼀个函数定义的函数体。也就
+是说，Ti ger 同 Pascal 和 Al gol ⼀样，允许访向外层作⽤域中的变量。
+· 类型∶ 在表达式 l et⋯rvdecs ⋯ i n exps end中，类型标识符的作⽤域从定义它的类型声
+明的连续序列开始，⼀直延续到 end。这包括此作⽤域内所有函数的函数头和函数体。
+· 函数∶ 在表达式 l et ⋯fundecs ⋯ i n exps end中，函数标识符的作⽤域从定义它的函数声
+明的连续序列开始，⼀直延续到 end。这包括此作⽤域内所有函数的函数头和函数体。
+●· 名字空间; 有两类不同的名字空间; ⼀种是类型的名字空间，另⼀种是函数和变量的名
+字空间。类型 a可以与变量a或函数a同时处在⼀个作⽤域中，但是，同名的变量和函
+数不能同时处于⼀个作⽤域中（其中⼀个将隐藏另⼀个）。
+· 局部重声明∶ 变量或函数的声明可以被较⼩作⽤域中同名的（变量或函数的）重复声明
+所隐藏。例如，以参数5调⽤下⾯这个函数将输出"6 7 68 6";
+fu n c tio n  f(v:in t)=
+le t v a r V ;= 6in  p rin t(v );
+le t v a r v  := 7  in  p rin t (v ) e n d ;
+pr i nt ( v) ;
+le t v a r v :=  8  in  p rin t (v ) e n d ;
+pr i nt ( v)end
+函数可隐蔽同名变量，反之亦然。类似地，类型声明可以被其作⽤域内具有较⼩作⽤域
+的同名的重复声明所隐藏。但是，在相互递归的函数序列中，不能有同名的函数; 并且
+在相互递归的类型序列中，不能有同名的类型。
+A. 3 变量和表达式
+A. 3. 1 左值
+左值是可以从其中取出值或对其赋值的⼀个位置。变量、过程参数、记录域和数组元素都
+是左值。
+w val ue →i d
+→)  hatue. i d
+→ hval ue Lep ]521· 变量∶ 形如 i d 的标识符引⽤⼀个根据作⽤域规则可访问的变量或参数。
+· 记录域∶ 点号表示法允许选择⼀个记录值相应的命名域。
+· 数组下标; ⽅括号表示法允许选择与编号对应的数组元素。数组以从0开始的连续整数
+（最⼤值为数组⼤⼩减1）作为索引。
+363附录 Ti ger语⾔参考⼿册
+A. 3. 2 表达式
+●· 左值∶ 当⽤于表达式时，其值是它对应的位置中的内容。
+· ⽆值表达式∶ 有⼀些表达式不产⽣结果，包括过程调⽤、赋值、i -then、w hi l e、break，
+有时还有 i -then-el se。因此，尽管表达式（a∶ =b）+c在词法上是正确的，但它却通不过
+类型检查。
+· ni l ∶ 表达式 ni l （保留字）表示⼀个属于所有记录类型的值 ni l 。如果记录变量 v的值为
+ni l ，则从v选择⼀个域会检测出⼀个运⾏时错误。ni l 必须⽤在可以确定其类型的上下⽂
+中，也就是∶
+OKvar a; m y-record : = ni l OKa :  nf 1 OKif a  < >  n il th e n：，。
+OK1f nl l  < >  a then..
+OKifa  = n i1 th e n  ..
+OKfu n c tio n  f(p : m y- re c o rd ) = ..f(n il)
+⾮法var a; * ni 1 ⾮法if n A 1 =  n 11 th e n。.· 序列∶ 括在括号内⽤分号隔开的两个或两个以上表达式组成的序列（exp; exp; . . . exp），
+按排列顺序计算它的所有表达式。此序列的结果是最后⼀个表达式产⽣的结果（如果有
+结果的话）。
+· ⽆值; ⼀个开括号其后跟随⼀个闭括号（这两个括号是两个独⽴的单词）是⼀个不产⽣
+值的表达式。类似地，在 i n 和 end之间没有内容的 l et表达式也不产⽣值。
+●· 整型字⾯量; 由⼗进制数字组成的⼀个序列是⼀个代表对应整数值的整型常数。
+●字符串字⾯量; 字符串是⼀个序列，它由括在双引号之间的0或更多个可打印字符、空
+⽩符或转义序列组成。每⼀个转义序列由转义字符\引⼊，代表⼀个字符序列。Ti ger允
+522许有如下的转义序列（\的所有其他⽤法都是⾮法的）。
+\m系统中表示换⾏的字符。
+制表符Tab。\t
+N^ e控制字符c，适⽤于任何适当的字符c。
+\dd具有 ASC I I 码 ddd（3个⼗进制数字）的单个字符。
+X"双引号字符（"）。
+反斜线字符（A）。A
+f\此序列将被忽略。其中ff代表⼀个或多个以上的格式化字符（⾮可⼈f
+打印字符的⼦集，⾄少应包含空⽩符、制表符、换⾏符、换⻚符）组成
+的序列。这使我们可以在⼀⾏的末尾和下⼀⾏的开始各写⼀个\，从⽽
+写出⻓度超过⼀⾏的⻓字符串。
+· 负值∶ 整型值表达式之前可以带有⼀个负号。
+· 函数调⽤∶ 函数调⽤ i d（）或 i d（expl ，exp| ）表示从左⾄右计算实参表，并⽤计算出的实
+参值来调⽤函数 i d。这些实参与该函数定义的对应形参相结合，函数体按照传统的静态
+作⽤域规则计算出⼀个结果。如果 i d 实际表示的是⼀个过程（即⽆返回值的函数），则
+其函数体不能产⽣结果值，并且调⽤此函数也不会有返回结果。
+364附录 Ti ger 语⾔参考⼿册
+· 算术操作∶ 形如 exp op exp 的表达式，其中 op 是+、-、、/，要求整型操作数，并且产
+⽣⼀个整型结果。
+· ⽐较∶ 形如exp op exp的表达式，其中op是=、<、>、<、>=、<=，⽐较它的两个操作
+数的相等或不等性，并在⽐较结果为真的情况下产⽣整数 1，在为假的情况下产⽣整数
+0。所有这些操作符都可以应⽤于整型操作数。相等或不等操作符也可应⽤于相同类型的
+两个记录或数组操作数，但⽐较的是其"引⽤"或"指针"的相等性（它们测试的是两
+个记录是否是相同的实例，⽽不是这两个记录是否具有相同的内容）。
+· 字符串⽐较; ⽐较操作符也可应⽤于字符串。如果两个字符串的内容相同，则这两个字
+符串相等; 没有办法识别部分字符相同的两个字符串。不等性是按照词典序来⽐较的。
+· 布尔操作∶ 形如exp op exp的表达式，其中op是区或| ，表示按捷径⽅式计算布尔交和
+并; 当它们可以由左操作数确定出其结果时，将不再计算其右操作数。任何⾮0的整数
+值都看成真值，整数0是假值。
+· 操作符的优先级∶ ⼀元负（取负）具有最⾼的优先级，操作符*、/具有次⾼优先级，其[5 2 3 ]次是+、-，之后是=、<、>、<、>、<，再之后是& ，最后是| 。
+· 操作符的结合性∶ 操作符*、/、+、-都是左结合的。⽐较操作符不能结合，因此，尽管
+a=（b=c）是合法的，a=b=c不是合法的表达式。
+· 记录创建∶ 表达式type-i d{ i d=expl ，i d=expl 或（对于⼀个空记录类型）type-d| 创建
+⼀个类型为 type-i d的新的记录实例。该记录表达式的域名和类型必须按给定的顺序与命
+名类型的域名和类型相匹配。这⾥的花括号{ } 就是花括号⾃身。
+· 数组创建∶ 表达式 type-i d【exp】of exp∶ 按顺序计算exp，和exp，分别计算出其元素的个
+数n和初始值v。类型 type-i d 必须声明为数组类型。该表达式的结果是⼀个类型为 type-
+i d，索引范围从0到 n-1的新数组，此数组的每⼀个元素的初值都为 v。
+· 数组和记录赋值∶ 当⼀个数组或记录变量 a被赋予了⼀个值b时，a引⽤的是与b相同
+的数组或记录。之后对a的元素的更新将影响b，反之亦然，直到 a被重新赋值。数组
+和记录参数传递的是地址，⽽不是值。
+●· ⽣存期; 记录和数组具有⽆限的⽣存期; 每⼀个记录或数组值是永久存在的，即使控制
+已退出了声明它们的作⽤域也如此。
+· 赋值∶ 赋值语句 l val ue∶ =exp 先计算1val ue，接着计算exp，然后设置 I val ue 的内容为表
+达式exp 的结果。在句法上，∶ =的优先级低于布尔操作符8和| 。赋值表达式不产⽣值，
+所以（a∶ = b）+c是⾮法的。
+· i f-then-el se∶ i 表达式i f exp; then exp。el se exp。计算整型表达式exp。如果结果不为0，
+则产⽣计算表达式 exp。的结果; 否则产⽣ exp，的结果。表达式exp; 和 exp，必须具有相同
+的类型，此类型也是整个 i f表达式的类型（或者，两个表达式都必须是⽆值的）
+· i -then; i 表达式i f exp. then exp; 计算整型表达式 exp。如果结果不为0，则计算 exp∶
+（它必须不产⽣值）。整个 i f表达式是⽆值的。
+· w hi l e∶ 表达式w hi l e exp，do exp; 计算整型表达式 exp。如果结果不为0，则计算 exp∶
+（它必须是⽆值的），然后重新计算整个 w hi l e表达式。
+· for∶ 表达式 for i d∶ =exp; to exp∶ do exp，对取值范围在exp 和exp; 之间的 i d 的每⼀个整
+数值重复计算exp。变量 i d 是⼀个由该for 语句隐含声明的新变量，它的作⽤域仅在
+exp。中，并且在exp; 内不可以对它赋值。循环体exp; 必须是⽆值的。循环的上界 exp; 和
+365附录 Ti ger语⾔参考⼿册
+524下界 exp∶ 只在进⼊循环体之前计算⼀次。如果上界⼩于下界，则不会执⾏循环体。
+· break∶ break 表达式终⽌直接包含它的那个 w hi l e表达式或 for 表达式的计算。即使p嵌
+套在q之内，过程 p 之内的 break 也不能终⽌过程q中的循环。break 位于w hi l e 或 for之
+外是⾮法的。
+· l et∶ 表达式 l et decs i n expseg end 计算声明 decs，绑定类型、变量和过程使它们的作⽤域
+为整个expseg。expseq 是0个或更多个⽤分号分隔的表达式所形成的序列，此序列中最
+后⼀个表达式的结果（若有的话）将作为整个 l et表达式的结果。
+· 圆括号; 和⼤多数程序设计语⾔⼀样，括住任何表达式的圆括号都强制它们在句法上组
+成⼀-组。
+A. 3. 3 程序
+Ti ger程序没有参数∶ 程序就是⼀个表达式 exp。
+A. 4 标准库
+Ti ger有下⾯⼏个预先定义的函数。
+fu n c tio n  p rin t(s ; e trin g )
+输出s ⾄标准输出。
+fu n c tio n  flu sh ()
+排空标准输出缓冲区。
+fu n c tio n  g e tc h a r(): strin g
+从标准输⼊读⼀个字符; 遇到⽂件尾则返回空字符串。
+fu n c tio n  o rd (g : strin g ):in t
+给出s中第⼀个字符的 ASC I I 值; 如果s是空字符串，则返回-1。
+fu n c tio n  c h r(i:in t):strin g
+ASC I I 值为i 的单字符字符串; 若i 超出了 ASC I I 字符集的范围，程序将停⽌。
+fu n c tio n  size  (e :strin g ):in t
+s中宇符的个数。
+fu n c tio n  g u b a trin g (s:strin g ,first:in t,n :in t): strin g
+字符串s中从第 fi rst 个字符开始、⻓度为n的⼦字符串，宇符从0开始编号。
+fu n c tio n  c o n c a t (sl: strin g ,9 2 ;strin g ): strin g
+s1和 s2的串联得到的宇符串。
+fu n e tio n  n o t(i :in t):in t
+返回（i = 0）。
+fu n c tio n  e xit(i;in t)
+366附录 Ti ger 语⾔参考⼿册
+525 以状态码i 终⽌程序的执⾏。
+A. 5 Ti ger 程序示例
+本节给出了两个已完成的 Ti ger程序; 程序6-2 只是⼀个Ti ger程序的⼀部分（⼀个函数）。
+A. 5. 1  QUEENS. TI G
+/* A program  to gol ve the 8-queens probl em  */
+le tvar N : =8
+typ e  in tA rra y=  a rra y o f in t
+var row  ; = i ntA rray [ N  ] of 0var col  : i ntA rray[N ] of 0
+var di ag1 : =i ntA rray [N +N -1] of 0
+var di ag2: =i ntA rray [N +N -1] of 0
+fu n c tio n  p rin tb o a rd ()=
+(fo r i:- 0  to  N - 1do( f t or  j : 0 t o N-1
+do pr i nt ( i f  col [ i ] =j  t hen"  o"  el ee" . " ) ;
+pri nt( "\n") ) :
+pri nt( "\n") )
+fu n c tio n  try(c :in t)=
+if c = Nth e n  p rin tb o a rd ()
+el ge f or  r  : = 0 t o N -1
+do i f  r ow [ r ] =0 & di agl [ r +c] =0& di ag2{ r +7-c] =0
+th e n (ro w (r]:= 1;d ia g l[r+ c ]:= 1;d ia g 2 [r+ 7 - c ]:= l;
+col  [ c] : =r ;try(C + 1)?
+ro w [r]:= 0 ; d ia g l[r+ c ]:= 0 ;d ia g 2 [r+ 7 - c ]:= 0 )
+in  try (0 )end
+这个程序输出了所有满⾜如下要求的棋盘布局∶ 在国际象棋棋盘上放置8个皇后，使之满
+⾜同⼀⾏、同⼀列和同⼀对⻆线上不会有两个皇后。它说明了数组和递归的⽤法。假设我们已
+成功地在第0～c⼀1列放置了两个皇后，则当第r⾏放置了皇后时，row 【r】将是1; 当第d条左
+下⻆⾄右上⻆的对⻆线放置了皇后时，di ag1【d】将是1; 当第d条左上⻆⾄右下⻆的对⻆线放置
+了皇后时，di ag2【d】将是1。接下来，try（c）尝试在第 c～N ⼀1⾏放置皇后。526
+A. 5. 2 M ERGE. TI G
+le t ty p e  a n y  =  (a n y : in t)var buffer : = getchar()
+fu n c tio n  re a d in t(a n y: a n y):in t =1et var i:= 0
+fu n c tio n  isd ig it(8  : strin g ):in t=
+367附录 Ti ger 语⾔参考⼿册
+or d( buf f er ) >=or d( " 0" ) & or d( buf f er ) <=or d( " 9" )
+i n w hi l e buffers""| buffer="\n" do buffer : = getchar( )
+any, any : =i sdi gi t ( buf f er ) ;
+wh i i e  i s d i g i t  ( b u f f e r )
+do ( i : = i *1 0+or d( buf f er ) -or d( " 0" ) ;
+buf f er  : = get char ( ) ) ;
+直end
+typ e  1ist = {first: in t,re a t: 1ist}
+fu n c tio n  re a d list (): list =
+le t v a r a n y  :=  a n y {a n y = 0 }
+var i : =readi nt(any)
+in  if a n y .a n y
+th e n  list{first- i,re st= re a d list()}
+el se ( buf f er : = get char ( ) ; ni l )
+end
+fu n c tio n  m e rg e (a : 11a t,b :lie t):1ia t=
+if a = n il th e n  b
+el se i f  b=ni 1 t hen ael ge i f  a. f i r at  < b. f i r st
+th e n  list{first- a .first,re st= m e rg e (a .re st,b )]
+el se 1i st ( f i r st =b. f i r st , r est =m er ge( a, b. r est ) )
+fu n c tio n  p rin tin t(i: in t)=le t fu n c tlo n  f(1 :in t)= if is > 0
+then( E( i /10) ; pri nt( chr( i -i /10*10+ord( "0") ) ) )
+in  if i< 0  th e n  (p rin t(" - * ):f(- i))
+el se i .  1s0 t hen f  ( i )
+el se pr i nt ( *o")
+end
+fu n c tio n  p rin tlist(l:list)=
+i f l =ni 1 then pri nt( "\n")
+el se( pr i nt i nt ( 1. f i r st ) ;  pr i nt ( "") ;  pr i nt l i st ( 1. r eat ) )
+/·  B O D Y  O F M AI N  PR O G R AM  */
+in  p rin tlis t(m e rg e (re a d lia t(),re a d lis t()))
+end
+这个程序从标准输⼈读⼈两列整数; 每列中的数应按递增顺序排列，数之间⽤空⽩或换⾏
+符分隔; 每⼀列数应当⽤分号来终⽌。
+程序的输出是这两列数的合并; 即⼀列按递增顺序排列的数。
+记录 any在 Ti ger 中⽤来模拟传地址调⽤。尽管readi nt不能更改它的实参（以指明输⼈中
+是否还余留有要输⼊的数），但可以更改它的实参的⼀个域。
+赋值 any∶ =anydany=0| 说明了⼀个名字可以表示变量、类型和域，具体表示什么取决于它
+的上下⽂。 527]

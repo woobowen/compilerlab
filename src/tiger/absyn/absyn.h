@@ -408,11 +408,7 @@ public:
   FieldList() = default;
   explicit FieldList(Field *field) : field_list_({field}) { assert(field); }
 
-<<<<<<< HEAD
-  FieldList *Append(Field *field) {
-=======
   FieldList *Prepend(Field *field) {
->>>>>>> 7681461c2ab9a184805ba17aa6ab9dce87827c84
     field_list_.push_front(field);
     return this;
   }
@@ -430,11 +426,7 @@ public:
   ExpList() = default;
   explicit ExpList(Exp *exp) : exp_list_({exp}) { assert(exp); }
 
-<<<<<<< HEAD
-  ExpList *Append(Exp *exp) {
-=======
   ExpList *Prepend(Exp *exp) {
->>>>>>> 7681461c2ab9a184805ba17aa6ab9dce87827c84
     exp_list_.push_front(exp);
     return this;
   }
@@ -468,11 +460,7 @@ public:
     assert(fun_dec);
   }
 
-<<<<<<< HEAD
-  FunDecList *Append(FunDec *fun_dec) {
-=======
   FunDecList *Prepend(FunDec *fun_dec) {
->>>>>>> 7681461c2ab9a184805ba17aa6ab9dce87827c84
     fun_dec_list_.push_front(fun_dec);
     return this;
   }
@@ -490,11 +478,7 @@ public:
   DecList() = default;
   explicit DecList(Dec *dec) : dec_list_({dec}) { assert(dec); }
 
-<<<<<<< HEAD
-  DecList *Append(Dec *dec) {
-=======
   DecList *Prepend(Dec *dec) {
->>>>>>> 7681461c2ab9a184805ba17aa6ab9dce87827c84
     dec_list_.push_front(dec);
     return this;
   }
@@ -520,11 +504,7 @@ public:
   explicit NameAndTyList(NameAndTy *name_and_ty)
       : name_and_ty_list_({name_and_ty}) {}
 
-<<<<<<< HEAD
-  NameAndTyList *Append(NameAndTy *name_and_ty) {
-=======
   NameAndTyList *Prepend(NameAndTy *name_and_ty) {
->>>>>>> 7681461c2ab9a184805ba17aa6ab9dce87827c84
     name_and_ty_list_.push_front(name_and_ty);
     return this;
   }
@@ -557,11 +537,7 @@ public:
   EFieldList() = default;
   explicit EFieldList(EField *efield) : efield_list_({efield}) {}
 
-<<<<<<< HEAD
-  EFieldList *Append(EField *efield) {
-=======
   EFieldList *Prepend(EField *efield) {
->>>>>>> 7681461c2ab9a184805ba17aa6ab9dce87827c84
     efield_list_.push_front(efield);
     return this;
   }
