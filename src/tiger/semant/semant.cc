@@ -1,5 +1,7 @@
 #include "tiger/absyn/absyn.h"
 #include "tiger/semant/semant.h"
+#include <set>
+#include <map>
 
 namespace absyn {
 
@@ -86,13 +88,32 @@ type::Ty *CallExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
   }
 
   env::FunEntry *fun_entry = static_cast<env::FunEntry*>(entry);
+
+  // First, analyze all actual parameters to get their types
+  std::vector<type::Ty*> actual_types;
+  for (Exp *arg : args_->GetList()) {
+    actual_types.push_back(arg->SemAnalyze(venv, tenv, labelcount, errormsg)->ActualTy());
+  }
+
+  // Check parameter count
+  size_t formal_count = fun_entry->formals_->GetList().size();
+  size_t actual_count = actual_types.size();
+
+  if (formal_count > actual_count) {
+    errormsg->Error(pos_, "too few params in function %s", func_->Name().c_str());
+  } else if (formal_count < actual_count) {
+    errormsg->Error(pos_, "too many params in function %s", func_->Name().c_str());
+  }
+
+  // Then check parameter types for the parameters that exist
   auto formal_it = fun_entry->formals_->GetList().begin();
   auto actual_it = args_->GetList().begin();
+  auto type_it = actual_types.begin();
 
   while (formal_it != fun_entry->formals_->GetList().end() &&
          actual_it != args_->GetList().end()) {
     type::Ty *formal_ty = (*formal_it)->ActualTy();
-    type::Ty *actual_ty = (*actual_it)->SemAnalyze(venv, tenv, labelcount, errormsg)->ActualTy();
+    type::Ty *actual_ty = *type_it;
 
     if (!formal_ty->IsSameType(actual_ty)) {
       errormsg->Error((*actual_it)->pos_, "para type mismatch");
@@ -100,12 +121,7 @@ type::Ty *CallExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
 
     ++formal_it;
     ++actual_it;
-  }
-
-  if (formal_it != fun_entry->formals_->GetList().end()) {
-    errormsg->Error(pos_, "too few params in function %s", func_->Name().c_str());
-  } else if (actual_it != args_->GetList().end()) {
-    errormsg->Error(pos_, "too many params in function %s", func_->Name().c_str());
+    ++type_it;
   }
 
   return fun_entry->result_->ActualTy();
@@ -140,11 +156,11 @@ type::Ty *OpExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
     case LE_OP:
     case GT_OP:
     case GE_OP:
-      if (typeid(*left_ty) != typeid(type::IntTy)) {
-        errormsg->Error(left_->pos_, "integer required");
-      }
-      if (typeid(*right_ty) != typeid(type::IntTy)) {
-        errormsg->Error(right_->pos_, "integer required");
+      if (!left_ty->IsSameType(right_ty)) {
+        errormsg->Error(pos_, "same type required");
+      } else if (typeid(*left_ty) != typeid(type::IntTy) &&
+                 typeid(*left_ty) != typeid(type::StringTy)) {
+        errormsg->Error(pos_, "integer or string required");
       }
       return type::IntTy::Instance();
 
@@ -249,6 +265,33 @@ type::Ty *WhileExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
   return type::VoidTy::Instance();
 }
 
+type::Ty *ForExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
+                             int labelcount, err::ErrorMsg *errormsg) const {
+  type::Ty *lo_ty = lo_->SemAnalyze(venv, tenv, labelcount, errormsg)->ActualTy();
+  type::Ty *hi_ty = hi_->SemAnalyze(venv, tenv, labelcount, errormsg)->ActualTy();
+
+  if (typeid(*lo_ty) != typeid(type::IntTy)) {
+    errormsg->Error(lo_->pos_, "for exp's range type is not integer");
+  }
+
+  if (typeid(*hi_ty) != typeid(type::IntTy)) {
+    errormsg->Error(hi_->pos_, "for exp's range type is not integer");
+  }
+
+  venv->BeginScope();
+  venv->Enter(var_, new env::VarEntry(type::IntTy::Instance(), true));
+
+  type::Ty *body_ty = body_->SemAnalyze(venv, tenv, labelcount + 1, errormsg)->ActualTy();
+
+  if (typeid(*body_ty) != typeid(type::VoidTy)) {
+    errormsg->Error(body_->pos_, "for body must produce no value");
+  }
+
+  venv->EndScope();
+
+  return type::VoidTy::Instance();
+}
+
 type::Ty *BreakExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
                                int labelcount, err::ErrorMsg *errormsg) const {
   if (labelcount == 0) {
@@ -334,14 +377,14 @@ type::Ty *AssignExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
 
 void FunctionDec::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
                              int labelcount, err::ErrorMsg *errormsg) const {
-  // First pass: add all function headers to environment
+  // First pass: add all function headers to environment and check for duplicates
+  std::set<sym::Symbol*> seen_names;
   for (FunDec *fun_dec : functions_->GetList()) {
     // Check for duplicate function names in the same batch
-    for (FunDec *other : functions_->GetList()) {
-      if (fun_dec != other && fun_dec->name_ == other->name_) {
-        errormsg->Error(pos_, "two functions have the same name");
-        break;
-      }
+    if (seen_names.count(fun_dec->name_)) {
+      errormsg->Error(fun_dec->pos_, "two functions have the same name");
+    } else {
+      seen_names.insert(fun_dec->name_);
     }
 
     // Build formal parameter type list
@@ -392,7 +435,11 @@ void FunctionDec::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
     type::Ty *result_ty = fun_entry->result_->ActualTy();
 
     if (!body_ty->IsSameType(result_ty)) {
-      errormsg->Error(fun_dec->body_->pos_, "function body type mismatch");
+      if (!fun_dec->result_ && typeid(*body_ty) != typeid(type::VoidTy)) {
+        errormsg->Error(fun_dec->body_->pos_, "procedure returns value");
+      } else {
+        errormsg->Error(fun_dec->body_->pos_, "function body type mismatch");
+      }
     }
 
     venv->EndScope();
@@ -427,14 +474,14 @@ void VarDec::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
 
 void TypeDec::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
                          err::ErrorMsg *errormsg) const {
-  // First pass: add all type names to environment
+  // First pass: add all type names to environment and check for duplicates
+  std::map<sym::Symbol*, NameAndTy*> seen_names;
   for (NameAndTy *name_and_ty : types_->GetList()) {
     // Check for duplicate type names in the same batch
-    for (NameAndTy *other : types_->GetList()) {
-      if (name_and_ty != other && name_and_ty->name_ == other->name_) {
-        errormsg->Error(pos_, "two types have the same name");
-        break;
-      }
+    if (seen_names.count(name_and_ty->name_)) {
+      errormsg->Error(seen_names[name_and_ty->name_]->ty_->pos_, "two types have the same name");
+    } else {
+      seen_names[name_and_ty->name_] = name_and_ty;
     }
     tenv->Enter(name_and_ty->name_, new type::NameTy(name_and_ty->name_, nullptr));
   }
@@ -447,20 +494,35 @@ void TypeDec::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
   }
 
   // Third pass: check for illegal cycles
+  std::set<sym::Symbol*> checked;
   for (NameAndTy *name_and_ty : types_->GetList()) {
+    if (checked.count(name_and_ty->name_)) {
+      continue;
+    }
+
     type::Ty *ty = tenv->Look(name_and_ty->name_);
     std::set<sym::Symbol*> visited;
     type::Ty *current = ty;
+    bool has_cycle = false;
 
     while (current && typeid(*current) == typeid(type::NameTy)) {
       type::NameTy *name_ty = static_cast<type::NameTy*>(current);
-      if (visited.count(name_ty->sym_)) {
-        errormsg->Error(pos_, "illegal type cycle");
+
+      if (checked.count(name_ty->sym_)) {
         break;
       }
+
+      if (visited.count(name_ty->sym_)) {
+        errormsg->Error(name_and_ty->ty_->pos_, "illegal type cycle");
+        has_cycle = true;
+        break;
+      }
+
       visited.insert(name_ty->sym_);
       current = name_ty->ty_;
     }
+
+    checked.insert(visited.begin(), visited.end());
   }
 }
 

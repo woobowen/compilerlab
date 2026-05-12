@@ -77,14 +77,17 @@ add_executable(test_slp ${SLP_SOURCES})
 # lab 2
 add_executable(test_lex "src/tiger/main/test_lex.cc" ${TIGER_SOURCES} ${TIGER_LEX_PARSE_SOURCES})
 add_dependencies(test_lex lex_parse_sources)
+target_link_libraries(test_lex stdc++fs)
 
 # lab 3
 add_executable(test_parse "src/tiger/main/test_parse.cc" ${TIGER_SOURCES} ${TIGER_LEX_PARSE_SOURCES})
 add_dependencies(test_parse lex_parse_sources)
+target_link_libraries(test_parse stdc++fs)
 
 # lab 4
 add_executable(test_semant "src/tiger/main/test_semant.cc" ${TIGER_SOURCES} ${TIGER_LEX_PARSE_SOURCES})
 add_dependencies(test_semant lex_parse_sources)
+target_link_libraries(test_semant stdc++fs)
 
 # # lab 5 & lab 6
 # add_executable(tiger-compiler "src/tiger/main/main.cc" ${TIGER_SOURCES} ${TIGER_LEX_PARSE_SOURCES})
