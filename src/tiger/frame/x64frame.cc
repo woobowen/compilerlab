@@ -78,7 +78,9 @@ public:
   explicit InFrameAccess(int offset) : offset(offset) {}
   /* TODO: Put your lab5 code here */
   tree::Exp *ToExp(tree::Exp *frame_ptr) const override {
-
+    return new tree::MemExp(
+      new tree::BinopExp(tree::PLUS_OP, frame_ptr, new tree::ConstExp(offset))
+    );
   }
   /* End for lab5 code */
 };
@@ -91,7 +93,7 @@ public:
   explicit InRegAccess(temp::Temp *reg) : reg(reg) {}
   /* TODO: Put your lab5 code here */
   tree::Exp *ToExp(tree::Exp *framePtr) const override {
-  
+    return new tree::TempExp(reg);
   }
   /* End for lab5 code */
 };
@@ -111,15 +113,81 @@ public:
   }
   frame::Access *AllocLocal(bool escape) override {
     /* TODO: Put your lab5 code here */
+    if (escape) {
+      // Allocate on stack (frame grows downward)
+      offset_ -= reg_manager->WordSize();
+      return new InFrameAccess(offset_);
+    } else {
+      // Allocate in register
+      return new InRegAccess(temp::TempFactory::NewTemp());
+    }
   }
   void AllocOutgoSpace(int size) override {
     /* TODO: Put your lab5 code here */
+    if (size > max_outgo_args_) {
+      max_outgo_args_ = size;
+    }
   }
   /* End for lab5 code */
 };
 
 frame::Frame *NewFrame(temp::Label *name, std::list<bool> formals) {
   /* TODO: Put your lab5 code here */
+  auto *formal_list = new std::list<frame::Access *>();
+
+  // x64 calling convention: first 6 args in registers (RDI, RSI, RDX, RCX, R8, R9)
+  // rest on stack
+  temp::TempList *arg_regs = reg_manager->ArgRegs();
+  auto arg_reg_list = arg_regs->GetList();
+  auto arg_reg_it = arg_reg_list.begin();
+
+  int stack_offset = 0; // Arguments on stack start after return address
+  tree::Stm *view_shift = nullptr;
+
+  for (bool escape : formals) {
+    frame::Access *access;
+
+    if (arg_reg_it != arg_reg_list.end()) {
+      // First 6 arguments: use registers
+      temp::Temp *arg_reg = *arg_reg_it;
+      ++arg_reg_it;
+
+      if (escape) {
+        // If escapes, allocate on stack and move from register
+        access = new InFrameAccess(stack_offset);
+        stack_offset -= reg_manager->WordSize();
+
+        // Generate view shift: move from register to stack
+        tree::Stm *move = new tree::MoveStm(
+          access->ToExp(new tree::TempExp(reg_manager->FramePointer())),
+          new tree::TempExp(arg_reg)
+        );
+
+        if (view_shift == nullptr) {
+          view_shift = move;
+        } else {
+          view_shift = new tree::SeqStm(view_shift, move);
+        }
+      } else {
+        // If not escape, keep in register
+        access = new InRegAccess(arg_reg);
+      }
+    } else {
+      // 7+ arguments: on stack (passed by caller)
+      // Stack layout: [ret_addr][arg7][arg8]...
+      // Offset is positive (above frame pointer)
+      access = new InFrameAccess(stack_offset);
+      stack_offset += reg_manager->WordSize();
+    }
+
+    formal_list->push_back(access);
+  }
+
+  auto *frame = new X64Frame(name, formal_list);
+  frame->view_shift = view_shift;
+  frame->offset_ = stack_offset < 0 ? stack_offset : 0;
+
+  return frame;
 }
 
 tree::Exp *ExternalCall(std::string_view s, tree::ExpList *args) {

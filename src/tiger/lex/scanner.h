@@ -73,6 +73,18 @@ inline void Scanner::preCode() {
 
 inline void Scanner::postCode(PostEnum_ type) {
   // Optionally replace by your own code
+  // 第4部分：错误处理
+  // 仅当遇到文件结束（EOF）时，才需要检查
+  if (type == PostEnum_::END){
+    // 注释未关闭
+    if (startCondition() == StartCondition_::COMMENT) {
+      errormsg_->Error(errormsg_->tok_pos_, "unexpected end of file in comment");
+    } 
+    // 字符串未关闭
+    if (startCondition() == StartCondition_::STR) {
+      errormsg_->Error(errormsg_->tok_pos_, "unexpected end of file in string");
+    }
+  }
 }
 
 inline void Scanner::print() { print_(); }
