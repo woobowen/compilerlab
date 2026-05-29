@@ -1,0 +1,434 @@
+#include "tiger/codegen/codegen.h"
+
+#include <cassert>
+#include <sstream>
+
+extern frame::RegManager *reg_manager;
+
+namespace {
+
+constexpr int maxlen = 1024;
+
+
+} // namespace
+
+namespace cg {
+
+void CodeGen::Codegen() {
+  /* TODO: Put your lab5 code here */
+  auto instr_list = new assem::InstrList();
+  fs_ = frame_->GetLabel() + "_framesize";
+
+  for (auto stm : traces_->GetStmList()->GetList()) {
+    stm->Munch(*instr_list, fs_);
+  }
+
+  assem_instr_ = std::make_unique<AssemInstr>(instr_list);
+  /* End for lab5 code */
+}
+
+void AssemInstr::Print(FILE *out, temp::Map *map) const {
+  for (auto instr : instr_list_->GetList())
+    instr->Print(out, map);
+  fprintf(out, "\n");
+}
+} // namespace cg
+
+namespace tree {
+
+/* TODO: Put your lab5 code here */
+/**
+ * Generate code for passing arguments
+ * @param args argument list
+ * @param instr_holder instruction holder
+ * @return temp list to hold arguments
+ */
+temp::TempList *ExpList::MunchArgs(assem::InstrList &instr_list, std::string_view fs) {
+  /* TODO: Put your lab5 code here */
+  auto arg_temps = new temp::TempList();
+  auto arg_regs = reg_manager->ArgRegs();
+  auto arg_reg_list = arg_regs->GetList();
+  auto arg_reg_it = arg_reg_list.begin();
+
+  int stack_arg_count = 0;
+
+  for (auto exp : exp_list_) {
+    // Skip the staticLink marker for external calls
+    if (typeid(*exp) == typeid(tree::NameExp)) {
+      auto name_exp = static_cast<tree::NameExp *>(exp);
+      if (name_exp->name_->Name() == "staticLink") {
+        continue;
+      }
+    }
+
+    temp::Temp *arg = exp->Munch(instr_list, fs);
+
+    if (arg_reg_it != arg_reg_list.end()) {
+      // First 6 arguments: move to argument registers
+      temp::Temp *arg_reg = *arg_reg_it;
+      ++arg_reg_it;
+
+      auto dst = new temp::TempList();
+      dst->Append(arg_reg);
+
+      auto src = new temp::TempList();
+      src->Append(arg);
+
+      instr_list.Append(new assem::MoveInstr(
+        "movq `s0, `d0",
+        dst,
+        src
+      ));
+
+      arg_temps->Append(arg_reg);
+    } else {
+      // 7+ arguments: push onto stack
+      auto src = new temp::TempList();
+      src->Append(arg);
+
+      instr_list.Append(new assem::OperInstr(
+        "movq `s0, " + std::to_string(stack_arg_count * reg_manager->WordSize()) + "(%rsp)",
+        nullptr,
+        src,
+        nullptr
+      ));
+
+      stack_arg_count++;
+      arg_temps->Append(arg);
+    }
+  }
+
+  return arg_temps;
+  /* End for lab5 code */
+}
+
+void SeqStm::Munch(assem::InstrList &instr_list, std::string_view fs) {
+  /* TODO: Put your lab5 code here */
+  // SeqStm should not exist in codegen phase
+  assert(false);
+  /* End for lab5 code */
+}
+
+void LabelStm::Munch(assem::InstrList &instr_list, std::string_view fs) {
+  /* TODO: Put your lab5 code here */
+  instr_list.Append(new assem::LabelInstr(
+    temp::LabelFactory::LabelString(label_),
+    label_
+  ));
+  /* End for lab5 code */
+}
+
+void JumpStm::Munch(assem::InstrList &instr_list, std::string_view fs) {
+  /* TODO: Put your lab5 code here */
+  instr_list.Append(new assem::OperInstr(
+    "jmp `j0",
+    nullptr,
+    nullptr,
+    new assem::Targets(jumps_)
+  ));
+  /* End for lab5 code */
+}
+
+void CjumpStm::Munch(assem::InstrList &instr_list, std::string_view fs) {
+  /* TODO: Put your lab5 code here */
+  temp::Temp *left = left_->Munch(instr_list, fs);
+  temp::Temp *right = right_->Munch(instr_list, fs);
+
+  auto src = new temp::TempList();
+  src->Append(left);
+  src->Append(right);
+
+  instr_list.Append(new assem::OperInstr(
+    "cmpq `s1, `s0",
+    nullptr,
+    src,
+    nullptr
+  ));
+
+  std::string jump_instr;
+  switch (op_) {
+    case EQ_OP: jump_instr = "je `j0"; break;
+    case NE_OP: jump_instr = "jne `j0"; break;
+    case LT_OP: jump_instr = "jl `j0"; break;
+    case LE_OP: jump_instr = "jle `j0"; break;
+    case GT_OP: jump_instr = "jg `j0"; break;
+    case GE_OP: jump_instr = "jge `j0"; break;
+    default: assert(false);
+  }
+
+  auto targets = new std::vector<temp::Label *>();
+  targets->push_back(true_label_);
+  targets->push_back(false_label_);
+
+  instr_list.Append(new assem::OperInstr(
+    jump_instr,
+    nullptr,
+    nullptr,
+    new assem::Targets(targets)
+  ));
+  /* End for lab5 code */
+}
+
+void MoveStm::Munch(assem::InstrList &instr_list, std::string_view fs) {
+  /* TODO: Put your lab5 code here */
+  // MOVE(MEM(e1), e2)
+  if (typeid(*dst_) == typeid(tree::MemExp)) {
+    auto mem = static_cast<tree::MemExp *>(dst_);
+    temp::Temp *src = src_->Munch(instr_list, fs);
+    temp::Temp *addr = mem->exp_->Munch(instr_list, fs);
+
+    auto src_list = new temp::TempList();
+    src_list->Append(src);
+    src_list->Append(addr);
+
+    instr_list.Append(new assem::OperInstr(
+      "movq `s0, (`s1)",
+      nullptr,
+      src_list,
+      nullptr
+    ));
+  }
+  // MOVE(TEMP(t), e)
+  else if (typeid(*dst_) == typeid(tree::TempExp)) {
+    auto temp_exp = static_cast<tree::TempExp *>(dst_);
+
+    // MOVE(TEMP(t), MEM(e))
+    if (typeid(*src_) == typeid(tree::MemExp)) {
+      auto mem = static_cast<tree::MemExp *>(src_);
+      temp::Temp *addr = mem->exp_->Munch(instr_list, fs);
+
+      auto src_list = new temp::TempList();
+      src_list->Append(addr);
+
+      auto dst_list = new temp::TempList();
+      dst_list->Append(temp_exp->temp_);
+
+      instr_list.Append(new assem::OperInstr(
+        "movq (`s0), `d0",
+        dst_list,
+        src_list,
+        nullptr
+      ));
+    }
+    // MOVE(TEMP(t), CONST(i))
+    else if (typeid(*src_) == typeid(tree::ConstExp)) {
+      auto const_exp = static_cast<tree::ConstExp *>(src_);
+
+      auto dst_list = new temp::TempList();
+      dst_list->Append(temp_exp->temp_);
+
+      instr_list.Append(new assem::OperInstr(
+        "movq $" + std::to_string(const_exp->consti_) + ", `d0",
+        dst_list,
+        nullptr,
+        nullptr
+      ));
+    }
+    // MOVE(TEMP(t), e)
+    else {
+      temp::Temp *src = src_->Munch(instr_list, fs);
+
+      auto src_list = new temp::TempList();
+      src_list->Append(src);
+
+      auto dst_list = new temp::TempList();
+      dst_list->Append(temp_exp->temp_);
+
+      instr_list.Append(new assem::MoveInstr(
+        "movq `s0, `d0",
+        dst_list,
+        src_list
+      ));
+    }
+  }
+  /* End for lab5 code */
+}
+
+void ExpStm::Munch(assem::InstrList &instr_list, std::string_view fs) {
+  /* TODO: Put your lab5 code here */
+  exp_->Munch(instr_list, fs);
+  /* End for lab5 code */
+}
+
+temp::Temp *BinopExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
+  /* TODO: Put your lab5 code here */
+  temp::Temp *left = left_->Munch(instr_list, fs);
+  temp::Temp *right = right_->Munch(instr_list, fs);
+  temp::Temp *r = temp::TempFactory::NewTemp();
+
+  auto src = new temp::TempList();
+  src->Append(left);
+  src->Append(right);
+
+  auto dst = new temp::TempList();
+  dst->Append(r);
+
+  switch (op_) {
+    case PLUS_OP:
+      // movq left, r; addq right, r
+      instr_list.Append(new assem::MoveInstr("movq `s0, `d0", dst, new temp::TempList({left})));
+      instr_list.Append(new assem::OperInstr("addq `s0, `d0", dst, new temp::TempList({right}), nullptr));
+      break;
+
+    case MINUS_OP:
+      // movq left, r; subq right, r
+      instr_list.Append(new assem::MoveInstr("movq `s0, `d0", dst, new temp::TempList({left})));
+      instr_list.Append(new assem::OperInstr("subq `s0, `d0", dst, new temp::TempList({right}), nullptr));
+      break;
+
+    case MUL_OP: {
+      // Multiplication: rax = rax * operand
+      // movq left, %rax; imulq right; movq %rax, r
+      temp::Temp *rax = reg_manager->GetRegister(frame::X64RegManager::RAX);
+
+      auto rax_list = new temp::TempList();
+      rax_list->Append(rax);
+
+      auto mul_src = new temp::TempList();
+      mul_src->Append(rax);
+      mul_src->Append(right);
+
+      instr_list.Append(new assem::MoveInstr("movq `s0, `d0", rax_list, new temp::TempList({left})));
+      instr_list.Append(new assem::OperInstr("imulq `s1", rax_list, mul_src, nullptr));
+      instr_list.Append(new assem::MoveInstr("movq `s0, `d0", dst, rax_list));
+      break;
+    }
+
+    case DIV_OP: {
+      // Division: rax = rdx:rax / divisor, rdx = remainder
+      // movq left, %rax; cqto; idivq right; movq %rax, r
+      temp::Temp *rax = reg_manager->GetRegister(frame::X64RegManager::RAX);
+      temp::Temp *rdx = reg_manager->GetRegister(frame::X64RegManager::RDX);
+
+      auto rax_list = new temp::TempList();
+      rax_list->Append(rax);
+
+      auto div_dst = new temp::TempList();
+      div_dst->Append(rax);
+      div_dst->Append(rdx);
+
+      auto div_src = new temp::TempList();
+      div_src->Append(rax);
+      div_src->Append(rdx);
+      div_src->Append(right);
+
+      instr_list.Append(new assem::MoveInstr("movq `s0, `d0", rax_list, new temp::TempList({left})));
+      instr_list.Append(new assem::OperInstr("cqto", new temp::TempList({rax, rdx}), rax_list, nullptr));
+      instr_list.Append(new assem::OperInstr("idivq `s2", div_dst, div_src, nullptr));
+      instr_list.Append(new assem::MoveInstr("movq `s0, `d0", dst, rax_list));
+      break;
+    }
+
+    default:
+      assert(false);
+  }
+
+  return r;
+  /* End for lab5 code */
+}
+
+temp::Temp *MemExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
+  /* TODO: Put your lab5 code here */
+  temp::Temp *addr = exp_->Munch(instr_list, fs);
+  temp::Temp *r = temp::TempFactory::NewTemp();
+
+  auto src = new temp::TempList();
+  src->Append(addr);
+
+  auto dst = new temp::TempList();
+  dst->Append(r);
+
+  instr_list.Append(new assem::OperInstr(
+    "movq (`s0), `d0",
+    dst,
+    src,
+    nullptr
+  ));
+
+  return r;
+  /* End for lab5 code */
+}
+
+temp::Temp *TempExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
+  /* TODO: Put your lab5 code here */
+  return temp_;
+  /* End for lab5 code */
+}
+
+temp::Temp *EseqExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
+  /* TODO: Put your lab5 code here */
+  // EseqExp should not exist in codegen phase
+  assert(false);
+  /* End for lab5 code */
+}
+
+temp::Temp *NameExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
+  /* TODO: Put your lab5 code here */
+  temp::Temp *r = temp::TempFactory::NewTemp();
+  auto dst = new temp::TempList();
+  dst->Append(r);
+
+  instr_list.Append(new assem::OperInstr(
+    "leaq " + name_->Name() + "(%rip), `d0",
+    dst,
+    nullptr,
+    nullptr
+  ));
+
+  return r;
+  /* End for lab5 code */
+}
+
+temp::Temp *ConstExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
+  /* TODO: Put your lab5 code here */
+  temp::Temp *r = temp::TempFactory::NewTemp();
+  auto dst = new temp::TempList();
+  dst->Append(r);
+
+  instr_list.Append(new assem::OperInstr(
+    "movq $" + std::to_string(consti_) + ", `d0",
+    dst,
+    nullptr,
+    nullptr
+  ));
+
+  return r;
+  /* End for lab5 code */
+}
+
+temp::Temp *CallExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
+  /* TODO: Put your lab5 code here */
+  temp::TempList *arg_temps = args_->MunchArgs(instr_list, fs);
+
+  // Get function name
+  std::string func_name;
+  if (typeid(*fun_) == typeid(tree::NameExp)) {
+    auto name_exp = static_cast<tree::NameExp *>(fun_);
+    func_name = name_exp->name_->Name();
+  } else {
+    assert(false);
+  }
+
+  // Call instruction
+  auto caller_saves = reg_manager->CallerSaves();
+  auto return_reg = reg_manager->ReturnValue();
+
+  auto dst = new temp::TempList();
+  dst->Append(return_reg);
+  // Add caller-saved registers to dst
+  for (auto reg : caller_saves->GetList()) {
+    dst->Append(reg);
+  }
+
+  instr_list.Append(new assem::OperInstr(
+    "callq " + func_name,
+    dst,
+    arg_temps,
+    nullptr
+  ));
+
+  return return_reg;
+  /* End for lab5 code */
+}
+
+} // namespace tree

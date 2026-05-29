@@ -4,8 +4,15 @@
 #include <map>
 
 #include "tiger/lex/scanner.h"
+#include "tiger/frame/x64frame.h"
+
+frame::RegManager *reg_manager;
+frame::Frags *frags;
 
 int main(int argc, char **argv) {
+  reg_manager = new frame::X64RegManager();
+  frags = new frame::Frags();
+
   std::map<int, std::string_view> tokname = {{Parser::ID, "ID"},
                                              {Parser::STRING, "STRING"},
                                              {Parser::INT, "INT"},

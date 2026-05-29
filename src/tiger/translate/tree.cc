@@ -219,4 +219,11 @@ RelOp Commute(RelOp r) {
   }
 }
 
+void StmList::Print(FILE *out) const {
+  for (auto stm : stm_list_) {
+    stm->Print(out, 0);
+    fprintf(out, "\n");
+  }
+}
+
 } // namespace tree

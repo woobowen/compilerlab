@@ -82,6 +82,23 @@ ziplab5-1:
         src/tiger/frame/x64frame.* \
         src/tiger/translate/translate.*
 
+ziplab5-2:
+	zip -j lab5-2-answer.zip \
+        src/tiger/parse/tiger.y \
+        src/tiger/lex/tiger.lex \
+        src/tiger/lex/scanner.h \
+        src/tiger/semant/semant.h \
+        src/tiger/semant/semant.cc \
+        src/tiger/escape/escape.* \
+        src/tiger/frame/frame.h \
+        src/tiger/frame/temp.* \
+        src/tiger/frame/x64frame.* \
+        src/tiger/translate/translate.* \
+        src/tiger/translate/tree.* \
+        src/tiger/canon/canon.* \
+        src/tiger/codegen/assem.* \
+        src/tiger/codegen/codegen.*
+
 clean:
 	rm -rf build/ src/tiger/lex/scannerbase.h src/tiger/lex/lex.cc \
 		src/tiger/parse/parserbase.h src/tiger/parse/parse.cc

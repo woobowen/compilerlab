@@ -3,8 +3,14 @@
 
 #include "tiger/absyn/absyn.h"
 #include "tiger/parse/parser.h"
+#include "tiger/frame/x64frame.h"
+
+frame::RegManager *reg_manager;
+frame::Frags *frags;
 
 int main(int argc, char **argv) {
+  reg_manager = new frame::X64RegManager();
+  frags = new frame::Frags();
   std::unique_ptr<absyn::AbsynTree> absyn_tree;
 
   if (argc < 2) {
