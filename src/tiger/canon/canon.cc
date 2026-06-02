@@ -1,10 +1,7 @@
 #include "tiger/canon/canon.h"
 
 namespace tree {
-/**
- * Gets rid of the top-level SEQ's, producing a list
- * @param stm current statement
- */
+
 void StmList::Linear(tree::Stm *stm) {
   if (typeid(*stm) == typeid(tree::SeqStm)) {
     auto seqstm = static_cast<tree::SeqStm *>(stm);

@@ -245,7 +245,6 @@ letter[a - zA - Z]
   return Parser::TYPE;
 }
 
-/* TODO: Put your lab2 code here */
 
 /* skip comments */
 

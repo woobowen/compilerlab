@@ -9,7 +9,6 @@
 
 #include "tiger/frame/temp.h"
 
-// Forward Declarations
 namespace canon {
 class StmAndExp;
 class Canon;
@@ -59,10 +58,6 @@ enum RelOp {
   UGE_OP,
   REL_OPER_COUNT,
 };
-
-/**
- * Statements
- */
 
 class Stm {
 public:
@@ -155,10 +150,6 @@ public:
   Stm *Canon() override;
   void Munch(assem::InstrList &instr_list, std::string_view fs) override;
 };
-
-/**
- *Expressions
- */
 
 class Exp {
 public:

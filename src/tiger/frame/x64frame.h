@@ -48,11 +48,7 @@ public:
   [[nodiscard]] temp::Temp *StackPointer() override;
 
   [[nodiscard]] temp::Temp *ReturnValue() override;
-  /* End for lab5 code */
 };
-
-// class InRegAccess : public Access;
-// class InFrameAccess : public Access;
 
 } // namespace frame
 #endif // TIGER_COMPILER_X64FRAME_H

@@ -3,17 +3,7 @@
 #include <cassert>
 
 namespace assem {
-/**
- * First param is string created by this function by reading 'assem' string
- * and replacing `d `s and `j stuff.
- * Last param is function to use to determine what to do with each temp.
- * @param assem assembly string
- * @param dst dst_ temp
- * @param src src temp
- * @param jumps jump labels_
- * @param m temp map
- * @return formatted assembly string
- */
+
 static std::string Format(std::string_view assem, temp::TempList *dst,
                           temp::TempList *src, Targets *jumps, temp::Map *m) {
   std::string result;

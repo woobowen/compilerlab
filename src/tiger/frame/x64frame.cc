@@ -10,7 +10,6 @@ X64RegManager::X64RegManager() : RegManager() {
   for (unsigned int i = 0; i < REG_COUNT; i++)
     regs_.push_back(temp::TempFactory::NewTemp());
 
-  // Note: no frame pointer in tiger compiler
   std::array<std::string_view, REG_COUNT> reg_name{
       "%rax", "%rbx", "%rcx", "%rdx", "%rsi", "%rdi", "%rbp", "%rsp",
       "%r8",  "%r9",  "%r10", "%r11", "%r12", "%r13", "%r14", "%r15"};
@@ -78,12 +77,10 @@ public:
   int offset;
 
   explicit InFrameAccess(int offset) : offset(offset) {}
-  /* TODO: Put your lab5 code here */
   tree::Exp *ToExp(tree::Exp *frame_ptr) const override {
     return new tree::MemExp(new tree::BinopExp(tree::BinOp::PLUS_OP,
-        frame_ptr,new tree::ConstExp(this->offset))); //根据教材上的示例
+        frame_ptr, new tree::ConstExp(this->offset)));
   }
-  /* End for lab5 code */
 };
 
 
@@ -92,15 +89,12 @@ public:
   temp::Temp *reg;
 
   explicit InRegAccess(temp::Temp *reg) : reg(reg) {}
-  /* TODO: Put your lab5 code here */
   tree::Exp *ToExp(tree::Exp *framePtr) const override {
     return new tree::TempExp(reg);
   }
-  /* End for lab5 code */
 };
 
 class X64Frame : public Frame {
-  /* TODO: Put your lab5 code here */
 public:
   tree::Stm *view_shift;
 
@@ -115,77 +109,56 @@ public:
     return formals_;
   }
   frame::Access *AllocLocal(bool escape) override {
-    /* TODO: Put your lab5 code here */
-    // 类似NewFrame函数中初始化Frame时为形参分配位置的操作
-    if(escape)
-    {
-      // 这里相对于Frame Pointer的偏移，应当是负数
-      return new InFrameAccess(-reg_manager->WordSize()*(++(this->local_count_)));
-    }
-    else
-    {
+    if (escape) {
+      return new InFrameAccess(-reg_manager->WordSize() * (++this->local_count_));
+    } else {
       return new InRegAccess(temp::TempFactory::NewTemp());
     }
   }
   void AllocOutgoSpace(int size) override {
-    /* TODO: Put your lab5 code here */
-    if(this->outgo_count<size)
-      this->outgo_count=size;
+    if (this->outgo_count < size)
+      this->outgo_count = size;
   }
   tree::Exp *ExternalCall(std::string_view s, tree::ExpList *args) override;
-  /* End for lab5 code */
 };
 
 frame::Frame *NewFrame(temp::Label *name, std::list<bool> formals) {
-  std::list<frame::Access *> *params=new std::list<frame::Access *>{};
-  int offset=0;
-  // 获取当前机器字长
-  int wordsize=reg_manager->WordSize();
-  X64Frame *frame=new X64Frame(name, params);
-  for(auto formal_it=formals.begin();formal_it!=formals.end();formal_it++)
-  {
-    Access *param=frame->AllocLocal(*formal_it);
+  std::list<frame::Access *> *params = new std::list<frame::Access *>{};
+  int offset = 0;
+  int wordsize = reg_manager->WordSize();
+  X64Frame *frame = new X64Frame(name, params);
+  for (auto formal_it = formals.begin(); formal_it != formals.end(); formal_it++) {
+    Access *param = frame->AllocLocal(*formal_it);
     params->push_back(param);
   }
-  // **传参！！！**
-  // 放在view_shift中
-  int arg_count=0,mem_count=0,formals_count=formals.size();
-  int max_arg_count=reg_manager->ArgRegs()->GetList().size();
-  mem_count=formals_count-max_arg_count;
-  for(auto formal:*(frame->Formals()))
-  {
-    tree::MoveStm *move_stm=nullptr;
-    // 此种情况下通过寄存器传参数
-    if( arg_count<max_arg_count)
-    {
-      move_stm=new tree::MoveStm(
+  int arg_count = 0, mem_count = 0, formals_count = formals.size();
+  int max_arg_count = reg_manager->ArgRegs()->GetList().size();
+  mem_count = formals_count - max_arg_count;
+  for (auto formal : *(frame->Formals())) {
+    tree::MoveStm *move_stm = nullptr;
+    if (arg_count < max_arg_count) {
+      move_stm = new tree::MoveStm(
         formal->ToExp(new tree::TempExp(reg_manager->FramePointer())),
         new tree::TempExp(reg_manager->ArgRegs()->NthTemp(arg_count))
       );
       ++arg_count;
-    }
-    // 此种情况下通过栈传参数
-    else
-    {
-      move_stm=new tree::MoveStm(
+    } else {
+      move_stm = new tree::MoveStm(
         formal->ToExp(new tree::TempExp(reg_manager->FramePointer())),
         new tree::MemExp(
           new tree::BinopExp(
             tree::BinOp::PLUS_OP,
             new tree::TempExp(reg_manager->FramePointer()),
-            new tree::ConstExp(reg_manager->WordSize()*(arg_count-max_arg_count+1)) // Magic (not) 不知道有没有bug
+            new tree::ConstExp(reg_manager->WordSize() * (arg_count - max_arg_count + 1))
           )
         )
       );
       ++arg_count;
     }
-    if(frame->view_shift==nullptr)
-    {
-      frame->view_shift=move_stm; // 可以被删除？
-    }
-    else
-    {
-      frame->view_shift=new tree::SeqStm(
+    if (frame->view_shift == nullptr) {
+      frame->view_shift = move_stm;
+    } else {
+      frame->view_shift = new tree::SeqStm(
         frame->view_shift,
         move_stm
       );
@@ -196,28 +169,16 @@ frame::Frame *NewFrame(temp::Label *name, std::list<bool> formals) {
 }
 
 tree::Exp *X64Frame::ExternalCall(std::string_view s, tree::ExpList *args) {
-  // Prepend a magic exp at first arg, indicating do not pass static link on
-  // stack
-  // args->Insert(new tree::NameExp(temp::LabelFactory::NamedLabel("staticLink")));
   return new tree::CallExp(new tree::NameExp(temp::LabelFactory::NamedLabel(s)),
                            args);
 }
 
-/**
- * Moving incoming formal parameters, the saving and restoring of callee-save
- * Registers
- * @param frame curruent frame
- * @param stm statements
- * @return statements with saving, restoring and view shift
- */
 tree::Stm *ProcEntryExit1(frame::Frame *frame, tree::Stm *stm) {
   auto x64_frame = dynamic_cast<frame::X64Frame *>(frame);
   assert(x64_frame);
 
   auto callee_list = new tree::ExpList();
 
-  // Save callee-saved register
-  // Prologue #5
   tree::Stm *save_stm = nullptr;
   temp::TempList *callees = reg_manager->CalleeSaves();
   for (auto callee : callees->GetList()) {
@@ -232,8 +193,6 @@ tree::Stm *ProcEntryExit1(frame::Frame *frame, tree::Stm *stm) {
     callee_list->Append(new tree::TempExp(r));
   }
 
-  // Restore callee-saved register
-  // Epilogue #8
   tree::Stm *restore_stm = nullptr;
   callees = reg_manager->CalleeSaves();
   auto callee_it = callee_list->GetList().begin();
@@ -247,11 +206,8 @@ tree::Stm *ProcEntryExit1(frame::Frame *frame, tree::Stm *stm) {
           new tree::MoveStm(new tree::TempExp(callee), *callee_it++));
   }
 
-  // Add view shift for arguments
   tree::Stm *exit_stm;
   if (x64_frame->view_shift == nullptr) {
-    // Outermost frame and functions with no formals do not have formal access_
-    // list and view shift
     exit_stm = new tree::SeqStm(save_stm, new tree::SeqStm(stm, restore_stm));
   } else
     exit_stm = new tree::SeqStm(
@@ -284,7 +240,5 @@ assem::Proc *ProcEntryExit3(frame::Frame *frame, assem::InstrList *body) {
 
   return new assem::Proc(prolog_builder.str(), body, epilog_builder.str());
 }
-
-/* End for lab5 code */
 
 } // namespace frame

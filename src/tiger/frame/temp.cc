@@ -15,11 +15,6 @@ Label *LabelFactory::NewLabel() {
   return NamedLabel(std::string(buf));
 }
 
-/**
- * Get symbol of a label_. The label_ will be created only if it is not found.
- * @param s label_ string
- * @return symbol
- */
 Label *LabelFactory::NamedLabel(std::string_view s) {
   return sym::Symbol::UniqueSymbol(s);
 }

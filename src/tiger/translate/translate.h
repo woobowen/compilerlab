@@ -86,15 +86,8 @@ public:
         tenv_(std::make_unique<env::TEnv>()),
         venv_(std::make_unique<env::VEnv>()) {}
 
-  /**
-   * Translate IR tree
-   */
   void Translate();
 
-  /**
-   * Transfer the ownership of errormsg to outer scope
-   * @return unique pointer to errormsg
-   */
   std::unique_ptr<err::ErrorMsg> TransferErrormsg() {
     return std::move(errormsg_);
   }
@@ -107,7 +100,6 @@ private:
   std::unique_ptr<env::TEnv> tenv_;
   std::unique_ptr<env::VEnv> venv_;
 
-  // Fill base symbol for var env and type env
   void FillBaseVEnv();
   void FillBaseTEnv();
 };

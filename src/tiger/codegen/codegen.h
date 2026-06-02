@@ -6,7 +6,6 @@
 #include "tiger/frame/x64frame.h"
 #include "tiger/translate/tree.h"
 
-// Forward Declarations
 namespace frame {
 class RegManager;
 class Frame;

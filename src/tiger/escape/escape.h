@@ -5,7 +5,6 @@
 
 #include "tiger/symbol/symbol.h"
 
-// Forward Declarations
 namespace absyn {
 class AbsynTree;
 } // namespace absyn
@@ -29,15 +28,8 @@ public:
   explicit EscFinder(std::unique_ptr<absyn::AbsynTree> absyn_tree)
       : absyn_tree_(std::move(absyn_tree)), env_(std::make_unique<EscEnv>()) {}
 
-  /**
-   * Escape analysis
-   */
   void FindEscape();
 
-  /**
-   * Transfer the ownership of absyn tree to outer scope
-   * @return unique pointer to the absyn tree
-   */
   std::unique_ptr<absyn::AbsynTree> TransferAbsynTree() {
     return std::move(absyn_tree_);
   }

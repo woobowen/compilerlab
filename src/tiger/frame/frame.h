@@ -18,43 +18,16 @@ public:
 
   temp::Temp *GetRegister(int regno) { return regs_[regno]; }
 
-  /**
-   * Get general-purpose registers except RSI
-   * NOTE: returned temp list should be in the order of calling convention
-   * @return general-purpose registers
-   */
   [[nodiscard]] virtual temp::TempList *Registers() = 0;
 
-  /**
-   * Get registers which can be used to hold arguments
-   * NOTE: returned temp list must be in the order of calling convention
-   * @return argument registers
-   */
   [[nodiscard]] virtual temp::TempList *ArgRegs() = 0;
 
-  /**
-   * Get caller-saved registers
-   * NOTE: returned registers must be in the order of calling convention
-   * @return caller-saved registers
-   */
   [[nodiscard]] virtual temp::TempList *CallerSaves() = 0;
 
-  /**
-   * Get callee-saved registers
-   * NOTE: returned registers must be in the order of calling convention
-   * @return callee-saved registers
-   */
   [[nodiscard]] virtual temp::TempList *CalleeSaves() = 0;
 
-  /**
-   * Get return-sink registers
-   * @return return-sink registers
-   */
   [[nodiscard]] virtual temp::TempList *ReturnSink() = 0;
 
-  /**
-   * Get word size
-   */
   [[nodiscard]] virtual int WordSize() = 0;
 
   [[nodiscard]] virtual temp::Temp *FramePointer() = 0;
@@ -70,15 +43,11 @@ protected:
 
 class Access {
 public:
-  /* TODO: Put your lab5 code here */
-
   virtual tree::Exp *ToExp(tree::Exp *frame_ptr) const = 0;
   virtual ~Access() = default;
-  
 };
 
 class Frame {
-  /* TODO: Put your lab5 code here */
 protected:
   int outgo_count;
   int local_count_;
@@ -110,10 +79,6 @@ public:
     String,
   };
 
-  /**
-   * Generate assembly for main program
-   * @param out FILE object for output assembly file
-   */
   virtual void OutputAssem(FILE *out, OutputPhase phase, bool need_ra) const = 0;
 };
 
@@ -152,10 +117,6 @@ frame::Frame *NewFrame(temp::Label *name, std::list<bool> formals);
 tree::Stm *ProcEntryExit1(frame::Frame *frame, tree::Stm *stm);
 assem::InstrList *ProcEntryExit2(assem::InstrList *body);
 assem::Proc *ProcEntryExit3(frame::Frame *frame, assem::InstrList *body);
-
-/* TODO: Put your lab5 code here */
-
-/* End for lab5 code */
 
 } // namespace frame
 
